@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.22)
+project(poly_triangulation)
+add_executable(main main.cpp)
+add_executable(std std.cpp)
+add_library(io STATIC io.cpp)
+add_library(graph STATIC graph.cpp)
+target_link_libraries(main io graph)
+add_executable(poly_partition poly_partition.cpp)
