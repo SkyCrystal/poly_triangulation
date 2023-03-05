@@ -1,6 +1,6 @@
 #ifndef GRAPH_H
 #define GRAPH_H
-
+#define DEBUG
 #include<cstdlib>
 #include<vector>
 #include<iostream>
@@ -10,6 +10,7 @@ struct Node {
 	int id;
 
 	Node(double x, double y, int id) : x(x), y(y), id(id) {};
+	Node(double x, double y):x(x),y(y),id(-1){};
 };
 
 struct Link {
@@ -20,13 +21,15 @@ struct Link {
 };
 
 struct Polygon {
-	bool is_clockwise, is_hole;
+	bool is_clockwise=0, is_hole=0;
 	int node_count;
 	Link *p;
 
 	Polygon() : Polygon(stdin) {};
 
 	explicit Polygon(FILE *input);
+
+	void update();
 };
 
 /**
