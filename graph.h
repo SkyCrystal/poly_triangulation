@@ -18,18 +18,26 @@ struct Link {
 	Link *pLink[2];
 
 	Link(Node *p, Link *fr, Link *ne = nullptr);
+	[[maybe_unused]]explicit operator Node() const
+	{
+		return *node;
+	}
 };
 
 struct Polygon {
-	bool is_clockwise=0, is_hole=0;
+	bool is_clockwise=0;
 	int node_count;
 	Link *p;
 
 	Polygon() : Polygon(stdin) {};
 
+	~Polygon();
+
 	explicit Polygon(FILE *input);
 
 	void update();
+
+	void set_clockwise(bool b);
 };
 
 /**
