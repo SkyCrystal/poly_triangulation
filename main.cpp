@@ -4,5 +4,6 @@
 #include"graph.h"
 
 int main() {
-
+	Map mp(stdin);
+	print_svg(mp);
 }

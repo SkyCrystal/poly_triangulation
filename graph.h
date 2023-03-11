@@ -1,6 +1,7 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 #define DEBUG
+
 #include<cstdlib>
 #include<vector>
 #include<iostream>
@@ -10,7 +11,8 @@ struct Node {
 	int id;
 
 	Node(double x, double y, int id) : x(x), y(y), id(id) {};
-	Node(double x, double y):x(x),y(y),id(-1){};
+
+	Node(double x, double y) : x(x), y(y), id(-1) {};
 };
 
 struct Link {
@@ -18,14 +20,14 @@ struct Link {
 	Link *pLink[2];
 
 	Link(Node *p, Link *fr, Link *ne = nullptr);
-	[[maybe_unused]]explicit operator Node() const
-	{
+
+	[[maybe_unused]]explicit operator Node() const {
 		return *node;
 	}
 };
 
 struct Polygon {
-	bool is_clockwise=0;
+	bool is_clockwise = 0;
 	int node_count;
 	Link *p;
 
@@ -38,6 +40,8 @@ struct Polygon {
 	void update();
 
 	void set_clockwise(bool b);
+
+
 };
 
 /**
@@ -45,10 +49,11 @@ struct Polygon {
  */
 struct Map {
 	std::vector<Node *> nodes;
-	size_t node_count;
+	unsigned node_count;
 
 	std::vector<Polygon *> polygons;
-	size_t polygon_count;
+	unsigned polygon_count;
+	int height, width;
 
 	Map() : Map(stdin) {};
 

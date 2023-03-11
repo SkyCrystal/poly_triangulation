@@ -4,12 +4,13 @@
 // Created by pb on 2023/2/19.
 //
 Map::Map(FILE *input) {
-	fscanf(input, "%d", &polygon_count);
+	fscanf(input, "%u %d %d", &polygon_count, &height, &width);
 	for (int i = 0; i < polygon_count; ++i) {
 		polygons.emplace_back(new Polygon(input));
 		polygons[i]->set_clockwise(i == 0);
 		node_count += polygons[i]->node_count;
 	}
+	fprintf(stderr, "map inited!\n");
 }
 
 Map::~Map() {
@@ -20,13 +21,12 @@ Map::~Map() {
 
 Polygon::Polygon(FILE *input) {
 	fscanf(input, "%d", &node_count);
-	Link *now, *last = p;
 	double posX, posY;
-	fscanf(input, "%f %f", &posX, &posY);
+	fscanf(input, "%lf %lf", &posX, &posY);
 	p = new Link(new Node(posX, posY), nullptr);
-
+	Link *now, *last = p;
 	for (int i = 0; i < node_count - 1; ++i) {
-		fscanf(input, "%f %f", &posX, &posY);
+		fscanf(input, "%lf %lf", &posX, &posY);
 		now = new Link(new Node(posX, posY), last);
 		last->pLink[1] = now;
 		last = now;
@@ -39,7 +39,7 @@ Polygon::Polygon(FILE *input) {
 #ifdef DEBUG
 	Link *t = p;
 	do {
-		fprintf(stderr, "%d %d\n", t->node->x, t->node->y);
+		fprintf(stderr, "%f %f\n", t->node->x, t->node->y);
 		t = t->pLink[1];
 	} while (t != p);
 #endif
