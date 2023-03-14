@@ -24,6 +24,7 @@ struct Link {
 	[[maybe_unused]]explicit operator Node() const {
 		return *node;
 	}
+	Link(const Link &l);
 };
 
 struct Polygon {
@@ -58,8 +59,10 @@ struct Map {
 	Map() : Map(stdin) {};
 
 	explicit Map(FILE *input);
-
+	void merge_hole();
 	~Map();
 };
+
+double dist(Node px,Node py);
 
 #endif

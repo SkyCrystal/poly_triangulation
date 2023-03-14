@@ -1,4 +1,5 @@
 #include "graph.h"
+#include<cmath>
 
 //
 // Created by pb on 2023/2/19.
@@ -17,6 +18,37 @@ Map::~Map() {
 	for (auto &i: polygons) {
 		delete i;
 	}
+}
+
+void Map::merge_hole() {
+	//FIXME: error at complex polygon holes
+	for (int i = 1; i < polygon_count; ++i) {
+		Link *nowX = polygons[0]->p;
+		Link *nowY = polygons[i]->p;
+		Link *px = nowX, *py = nowY;
+		double dis = dist(*px->node, *py->node);
+		do {
+			do {
+				if (dis > dist(*nowX->node, *nowY->node)) {
+					dis = dist(*nowX->node, *nowY->node);
+					px = nowX;
+					py = nowY;
+				}
+				nowY = nowY->pLink[1];
+			} while (nowY != polygons[i]->p);
+			nowX = nowX->pLink[1];
+		} while (nowX != polygons[0]->p);
+		Link *newX = new Link(*px);
+		Link *newY = new Link(*py);
+		px->pLink[1] = newY;
+		newX->pLink[0] = py;
+		py->pLink[1] = newX;
+		newY->pLink[0] = px;
+		polygons[0]->node_count += polygons[i]->node_count + 2;
+		polygons[i]->node_count = 0;
+	}
+
+	polygons.resize(1);
 }
 
 Polygon::Polygon(FILE *input) {
@@ -46,6 +78,7 @@ Polygon::Polygon(FILE *input) {
 }
 
 Polygon::~Polygon() {
+	if (node_count == 0)return;
 	Link *now = p;
 	do {
 		delete now->pLink[0];
@@ -89,4 +122,14 @@ void Polygon::set_clockwise(bool b) {
 Link::Link(Node *p, Link *fr, Link *ne) : node(p) {
 	pLink[0] = fr;
 	pLink[1] = ne;
+}
+
+Link::Link(const Link &l) {
+	pLink[0] = l.pLink[0];
+	pLink[1] = l.pLink[1];
+	node = new Node(*l.node);
+}
+
+double dist(Node px, Node py) {
+	return sqrt((px.x - py.x) * (px.x - py.x) + (px.y - py.y) * (px.y - py.y));
 }

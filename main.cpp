@@ -4,6 +4,8 @@
 #include"graph.h"
 
 int main() {
-	Map mp(stdin);
+	FILE *input= fopen("test.in","r");
+	Map mp(input);
+	mp.merge_hole();
 	print_svg(mp);
 }
