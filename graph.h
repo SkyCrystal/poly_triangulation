@@ -5,14 +5,20 @@
 #include<cstdlib>
 #include<vector>
 #include<iostream>
-
+#include<cmath>
+struct Link;
 struct Node {
 	double x, y;
 	int id;
+	Link* ln= nullptr;
 
 	Node(double x, double y, int id) : x(x), y(y), id(id) {};
 
 	Node(double x, double y) : x(x), y(y), id(-1) {};
+
+	Node(const Node &x)=default;
+
+	bool operator < (const Node &rhs) const;
 };
 
 struct Link {
@@ -42,7 +48,9 @@ struct Polygon {
 
 	void set_clockwise(bool b);
 
+	void set_id(int id);
 
+	void load_nodes(std::vector<Node *> &vector1) const;
 };
 
 /**
@@ -50,19 +58,26 @@ struct Polygon {
  */
 struct Map {
 	std::vector<Node *> nodes;
-	unsigned node_count;
 
 	std::vector<Polygon *> polygons;
-	unsigned polygon_count;
-	int height, width;
+	unsigned polygon_count{};
+	int height{}, width{};
 
 	Map() : Map(stdin) {};
 
 	explicit Map(FILE *input);
 	void merge_hole();
 	~Map();
+
+	void standardization();
 };
 
 double dist(Node px,Node py);
+
+double cross(const Link &a, const Link &b);
+
+double cross(const Node &a, const Node &b);
+
+double cross(const Node &o, const Node &a, const Node &b);
 
 #endif

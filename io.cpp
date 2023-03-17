@@ -8,6 +8,7 @@ void print_svg(const Map &mp, const char *file) {
 	fprintf(output, R"(<rect width="%d" height="%d" fill="white"/>
 )", mp.width, mp.height);
 	for (const auto &i: mp.polygons) {
+		if(i->node_count==0)continue;
 		fprintf(output, R"(<polygon stroke="black" stroke-width="0.5" fill="none" points=")");
 		const Link *now = i->p;
 		do {
