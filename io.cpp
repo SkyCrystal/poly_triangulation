@@ -8,7 +8,7 @@ void print_svg(const Map &mp, const char *file) {
 	fprintf(output, R"(<rect width="%d" height="%d" fill="white"/>
 )", mp.width, mp.height);
 	for (const auto &i: mp.polygons) {
-		if(i->node_count==0)continue;
+		if (i->node_count == 0)continue;
 		fprintf(output, R"(<polygon stroke="black" stroke-width="0.5" fill="none" points=")");
 		const Link *now = i->p;
 		do {
@@ -20,4 +20,11 @@ void print_svg(const Map &mp, const char *file) {
 	fprintf(output, "</svg>");
 	fclose(output);
 	fprintf(stderr, "done!");
+}
+
+IO::IO(char *name, int width, int height) {
+	output = fopen(name, "w");
+	fprintf(output, R"(<svg version="1.1" width="%d" height="%d" xmlns="http://www.w3.org/2000/svg">
+)", width, height);
+
 }

@@ -8,8 +8,10 @@ int main() {
 	FILE *input = fopen("test.in", "r");
 	assert(input != nullptr);
 	Map mp(input);
+	print_svg(mp, "input.svg");
 	mp.merge_hole();
-	print_svg(mp);
-
+	print_svg(mp, "pass1.svg");
+	mp.cut();
+	print_svg(mp, "output.svg");
 
 }

@@ -1,5 +1,8 @@
+#include <stack>
 #include "graph.h"
 
+
+double cross(const Node &v1, const Node &v2);
 
 Map::Map(FILE *input) {
 	fscanf(input, "%u", &polygon_count);
@@ -38,34 +41,10 @@ void Map::merge_hole() {
 		}
 		now = i;
 	}
-	//FIXME: error at complex polygon holes
-//	for (int i = 1; i < polygon_count; ++i) {
-//		Link *nowX = polygons[0]->p;
-//		Link *nowY = polygons[i]->p;
-//		Link *px = nowX, *py = nowY;
-//		double dis = dist(*px->node, *py->node);
-//		do {
-//			do {
-//				if (dis > dist(*nowX->node, *nowY->node)) {
-//					dis = dist(*nowX->node, *nowY->node);
-//					px = nowX;
-//					py = nowY;
-//				}
-//				nowY = nowY->pLink[1];
-//			} while (nowY != polygons[i]->p);
-//			nowX = nowX->pLink[1];
-//		} while (nowX != polygons[0]->p);
-//		Link *newX = new Link(*px);
-//		Link *newY = new Link(*py);
-//		px->pLink[1] = newY;
-//		newX->pLink[0] = py;
-//		py->pLink[1] = newX;
-//		newY->pLink[0] = px;
-//		polygons[0]->node_count += polygons[i]->node_count + 2;
-//		polygons[i]->node_count = 0;
-//	}
-//
-//	polygons.resize(1);
+	for (int i = 1; i < polygons.size(); ++i) {
+		delete polygons[i];
+	}
+	polygons.resize(1);
 }
 
 void Map::standardization() {
@@ -99,6 +78,12 @@ void Map::standardization() {
 		width *= multi;
 		height *= multi;
 	}
+}
+
+void Map::cut() {
+	std::vector<Polygon *> t;
+	polygons[0]->cut_into(t);
+	polygons = std::move(t);
 }
 
 Polygon::Polygon(FILE *input) {
@@ -142,10 +127,10 @@ void Polygon::update() {
 	double area = 0;
 	Link *now = p;
 	do {
-		area += cross(*now, *now->pLink[1]);
+		area += cross(*now->node, *now->pLink[1]->node);
 		now = now->pLink[1];
 	} while (p != now);
-	is_clockwise = (area > 0);
+	is_clockwise = (area < 0);
 	//maybe do some check here
 }
 
@@ -175,6 +160,61 @@ void Polygon::load_nodes(std::vector<Node *> &nodes) const {
 	} while (now != p);
 }
 
+void Polygon::cut_into(std::vector<Polygon *> &output) {
+	Link *first = p;
+	do {
+		if (angle(first) < 0) {
+			fprintf(stderr, "cut at:%f %f\n", first->node->x, first->node->y);
+			std::stack<Link *> stk;
+			Link *second = first->pLink[1];
+			stk.push(second);
+			second = second->pLink[1];
+
+			double prev, rote, comp;
+			int is_inc = 0, is_covered = 0;
+			while (second != first) {
+				prev = angle(*second->pLink[0]->node - *first->node, *second->node - *first->node);
+				rote = angle(second->pLink[0]);
+				comp = angle(*stk.top()->node - *first->node, *second->node - *first->node);
+				if (prev > 0) {
+					if (is_covered == 1) {
+						if (comp > 0) {
+							is_covered = 0;
+							stk.push(second);
+						}
+					} else {
+						stk.push(second);
+					}
+					is_inc = 1;
+				}
+				if (prev == 0) {
+					if (is_covered == 0) {
+						if (second->node->get_len() < stk.top()->node->get_len()) {
+							stk.pop();
+							stk.push(second);
+						}
+					}
+				}
+				if (prev < 0) {
+					if (is_inc == 1) {
+						if (rote < 0) {
+							is_covered = 1;
+						}
+					}
+					if (is_covered == 0) {
+						while (angle(*stk.top()->node - *first->node, *second->node - *first->node) < 0) {
+							stk.pop();
+						}
+					}
+					is_inc = 0;
+				}
+				second = second->pLink[1];
+			}
+		}
+		first = first->pLink[1];
+	} while (first != p);
+}
+
 Link::Link(Node *p, Link *fr, Link *ne) : node(p) {
 	pLink[0] = fr;
 	pLink[1] = ne;
@@ -191,19 +231,46 @@ bool Node::operator<(const Node &rhs) const {
 	return y < rhs.y;
 }
 
-double dist(Node px, Node py) {
-	return sqrt((px.x - py.x) * (px.x - py.x) + (px.y - py.y) * (px.y - py.y));
+Node::Node(const Node &x, const Node &y) : id(0), ln(nullptr) {
+	this->x = y.x - x.x;
+	this->y = y.y - x.y;
 }
 
-double cross(const Node &o, const Node &a, const Node &b) {
-	return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+Node Node::operator-(const Node &rhs) const {
+	return {x - rhs.x, y - rhs.y, id};
 }
 
-double cross(const Node &a, const Node &b) {
-	return a.x * b.y - a.y * b.x;
+
+double point(const Node &a, const Node &b) {
+	return a.x * b.x + a.y * b.y;
 }
 
-double cross(const Link &a, const Link &b) {
-	return cross(*a.node, *b.node);
+/**
+ * calculate the angle of edge p->a->n
+ * @return [-pi,pi]
+ */
+double angle(Link *const &a) {
+	Node v1(*a->pLink[0]->node, *a->node);
+	Node v2(*a->node, *a->pLink[1]->node);
+	double c = acos(point(v1, v2) / v1.get_len() / v2.get_len());
+	if (cross(v1, v2) < 0)c = -c;
+	return c;
 }
+
+/**
+ * calculate the angle from vector a to vector b
+ * @param a first vector
+ * @param b second vector
+ * @return [-pi,pi]
+ */
+double angle(Node a, Node b) {
+	double c = acos(point(a, b) / a.get_len() / b.get_len());
+	if (cross(a, b) < 0)c = -c;
+	return c;
+}
+
+double cross(const Node &v1, const Node &v2) {
+	return v1.x * v2.y - v2.x * v1.y;
+}
+
 
