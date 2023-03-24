@@ -6,7 +6,6 @@
 #include<vector>
 #include<iostream>
 #include<cmath>
-
 struct Link;
 
 struct Node {
@@ -75,6 +74,7 @@ struct Map {
 	std::vector<Polygon *> polygons;
 	unsigned polygon_count{};
 	int height{}, width{};
+	IO *io;
 
 	Map() : Map(stdin) {};
 

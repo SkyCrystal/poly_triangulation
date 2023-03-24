@@ -1,7 +1,7 @@
 #include <stack>
+#include <algorithm>
 #include "graph.h"
-
-
+#include "io.h"
 double cross(const Node &v1, const Node &v2);
 
 Map::Map(FILE *input) {
@@ -13,14 +13,14 @@ Map::Map(FILE *input) {
 		polygons[i]->load_nodes(nodes);
 	}
 	standardization();
-
-	fprintf(stderr, "map inited!\n");
+	IO::init("debug.svg",width,height);
 }
 
 Map::~Map() {
 	for (auto &i: polygons) {
 		delete i;
 	}
+	IO::close();
 }
 
 void Map::merge_hole() {
@@ -161,6 +161,7 @@ void Polygon::load_nodes(std::vector<Node *> &nodes) const {
 }
 
 void Polygon::cut_into(std::vector<Polygon *> &output) {
+	IO::print(*this);
 	Link *first = p;
 	do {
 		if (angle(first) < 0) {
@@ -209,6 +210,10 @@ void Polygon::cut_into(std::vector<Polygon *> &output) {
 					is_inc = 0;
 				}
 				second = second->pLink[1];
+			}
+			while(!stk.empty()){
+				IO::print(*first->node,*stk.top()->node);
+
 			}
 		}
 		first = first->pLink[1];
