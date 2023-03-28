@@ -8,9 +8,9 @@ void print_svg(const Map &mp, const char *file = "output.svg");
 namespace IO{
 	void init(const char [], int width, int height);
 
-	FILE* output;
+	void flush();
 	void init(const char[]);
-	void init(int,int) const;
+	void init(int,int);
 	void close();
 
 	void print(const Node &a, const Node &b);

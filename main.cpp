@@ -5,7 +5,7 @@
 #include"graph.h"
 
 int main() {
-	FILE *input = fopen("test.in", "r");
+	FILE *input = fopen("test2.in", "r");
 	assert(input != nullptr);
 	Map mp(input);
 	print_svg(mp, "input.svg");

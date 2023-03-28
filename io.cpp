@@ -1,7 +1,8 @@
 #include"io.h"
+#include <cassert>
 
 void print_svg(const Map &mp, const char *file) {
-	fprintf(stderr, "print svg\n");
+	fprintf(stderr, "print svg ");
 	FILE *output = fopen(file, "w");
 	fprintf(output, R"(<svg version="1.1" width="%d" height="%d" xmlns="http://www.w3.org/2000/svg">
 )", mp.width, mp.height);
@@ -9,51 +10,61 @@ void print_svg(const Map &mp, const char *file) {
 )", mp.width, mp.height);
 	for (const auto &i: mp.polygons) {
 		if (i->node_count == 0)continue;
+		if (i->p == nullptr)continue;
 		fprintf(output, R"(<polygon stroke="black" stroke-width="0.5" fill="none" points=")");
 		const Link *now = i->p;
 		do {
-			fprintf(output, "%f %f,", now->node->x, now->node->y);
+			fprintf(output, "%f %f,", now->node.x, now->node.y);
+//			assert(now->pLink[0]->pLink[1]==now);
 			now = now->pLink[1];
 		} while (now != i->p);
 		fprintf(output, "\"/>\n");
 	}
 	fprintf(output, "</svg>");
 	fclose(output);
-	fprintf(stderr, "done!");
+	fprintf(stderr, "done!\n");
 }
 
-void IO::init(const char name[], int width, int height) {
-	output = fopen(name, "w");
-	init(width, height);
-}
+namespace IO {
+	FILE *output;
 
-void IO::init(const char name[]) {
-	output = fopen(name, "w");
-}
+	void init(const char name[], int width, int height) {
+		output = fopen(name, "w");
+		init(width, height);
+	}
 
-void IO::close() {
-	fprintf(output, "</svg>");
-	fclose(output);
-}
+	void init(const char name[]) {
+		output = fopen(name, "w");
+	}
 
-void IO::init(int width, int height) {
-	fprintf(output, R"(<svg version="1.1" width="%d" height="%d" xmlns="http://www.w3.org/2000/svg">
+	void close() {
+		fprintf(output, "</svg>");
+		fclose(output);
+	}
+
+	void init(int width, int height) {
+		fprintf(output, R"(<svg version="1.1" width="%d" height="%d" xmlns="http://www.w3.org/2000/svg">
 )", width, height);
-	fprintf(output, R"(<rect width="%d" height="%d" fill="white"/>
+		fprintf(output, R"(<rect width="%d" height="%d" fill="white"/>
 )", width, height);
-}
+	}
 
-void IO::print(const Node &a, const Node &b) {
-	fprintf(output, R"(<line x1="%f" y1="%f" x2="%f" y2="%f" stroke="black" />
+	void print(const Node &a, const Node &b) {
+		fprintf(output, R"(<line x1="%f" y1="%f" x2="%f" y2="%f" stroke="black" />
 )", a.x, a.y, b.x, b.y);
-}
+	}
 
-void IO::print(const Polygon &i) {
-	fprintf(output, R"(<polygon stroke="black" stroke-width="0.5" fill="none" points=")");
-	const Link *now = i.p;
-	do {
-		fprintf(output, "%f %f,", now->node->x, now->node->y);
-		now = now->pLink[1];
-	} while (now != i.p);
-	fprintf(output, "\"/>\n");
+	void print(const Polygon &i) {
+		fprintf(output, R"(<polygon stroke="black" stroke-width="0.5" fill="none" points=")");
+		const Link *now = i.p;
+		do {
+			fprintf(output, "%f %f,", now->node.x, now->node.y);
+			now = now->pLink[1];
+		} while (now != i.p);
+		fprintf(output, "\"/>\n");
+	}
+
+	void flush() {
+		fflush(output);
+	}
 }

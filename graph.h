@@ -6,6 +6,7 @@
 #include<vector>
 #include<iostream>
 #include<cmath>
+
 struct Link;
 
 struct Node {
@@ -23,30 +24,33 @@ struct Node {
 
 	Node operator-(const Node &rhs) const;
 
-	Node(const Node &x,const Node &y);
+	Node(const Node &x, const Node &y);
+
+	Node();
 
 	[[nodiscard]] inline double get_len() const {
 		return std::sqrt(x * x + y * y);
 	}
+
+	bool operator==(const Node &rhs) const;
 };
 
 struct Link {
-	Node *node;
+	Node node;
 	Link *pLink[2];
+	double dis;
 
-	Link(Node *p, Link *fr, Link *ne = nullptr);
+	Link(Node p, Link *fr, Link *ne = nullptr);
 
-	[[maybe_unused]]explicit operator Node() const {
-		return *node;
-	}
+	explicit Link(const Link &p);
 
-	Link(const Link &l);
 };
 
 struct Polygon {
 	bool is_clockwise = false;
-	int node_count;
+	int node_count;//only used for io
 	Link *p;
+	double circle;
 
 	Polygon() : Polygon(stdin) {};
 
@@ -54,7 +58,9 @@ struct Polygon {
 
 	explicit Polygon(FILE *input);
 
-	void update();
+	explicit Polygon(Link *start);
+
+	void init();
 
 	void set_clockwise(bool b);
 
@@ -63,6 +69,10 @@ struct Polygon {
 	void load_nodes(std::vector<Node *> &vector1) const;
 
 	void cut_into(std::vector<Polygon *> &output);
+
+	void fake_cut_into(std::vector<Polygon *> &output);
+
+	void debug();
 };
 
 /**
@@ -74,7 +84,6 @@ struct Map {
 	std::vector<Polygon *> polygons;
 	unsigned polygon_count{};
 	int height{}, width{};
-	IO *io;
 
 	Map() : Map(stdin) {};
 
@@ -90,10 +99,21 @@ struct Map {
 };
 
 
+struct Cut {
+	Node *a, *b;
+	double score;
+
+	bool operator<(const Cut &rhs) const;
+};
+
 double point(const Node &a, const Node &b);
 
 double angle(Link *const &a);
 
 double angle(Node a, Node b);
+
+
+bool intersection(const Node &a, const Node &b, const Node &c,
+                  const Node &d);
 
 #endif
