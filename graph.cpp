@@ -22,10 +22,10 @@ Map::Map(FILE *input) {
 }
 
 Map::~Map() {
+	IO::close();
 	for (auto &i: polygons) {
 		delete i;
 	}
-	IO::close();
 }
 
 void Map::merge_hole() {
@@ -60,8 +60,8 @@ void Map::merge_hole() {
 
 void Map::standardization() {
 	double dlt;
-	std::sort(nodes.begin(), nodes.end(), [](auto l, auto r) {
-		if (std::fabs(l->y - r->y) < 1e-6) return l->y < r->y;
+	std::sort(nodes.begin(), nodes.end(), [](const Node *l, const Node *r) {
+		if (l->x == r->x) return l->y < r->y;
 		return l->x < r->x;
 	});
 	dlt = 10 - nodes[0]->x;
@@ -71,7 +71,7 @@ void Map::standardization() {
 	width = std::ceil((*nodes.rbegin())->x + 10);
 
 	std::sort(nodes.begin(), nodes.end(), [](auto l, auto r) {
-		if (std::fabs(l->x - r->x) < 1e-6) return l->x < r->x;
+		if (l->y == r->y) return l->x < r->x;
 		return l->y < r->y;
 	});
 	dlt = 10 - nodes[0]->y;
@@ -174,7 +174,7 @@ void Polygon::load_nodes(std::vector<Node *> &nodes) const {
 
 void Polygon::cut_into(std::vector<Polygon *> &output) {
 	this->debug();
-	fprintf(stderr, "cut:%p\n", this);
+//	fprintf(stderr, "cut:%p\n", this);
 	Link *first = p;
 	int cnt = 0;
 	first->dis = 0;
@@ -184,42 +184,44 @@ void Polygon::cut_into(std::vector<Polygon *> &output) {
 		first->dis = first->pLink[0]->dis + Node(first->pLink[0]->node, first->node).get_len();
 		assert(first->pLink[0]->pLink[1] == first);
 		first->node.id = ++cnt;
-		fprintf(stderr, "at %.2f %.2f,dis=%.2f\n", first->node.x, first->node.y, first->dis);
+//		fprintf(stderr, "at %.2f %.2f,dis=%.2f\n", first->node.x, first->node.y, first->dis);
 		first = first->pLink[1];
 	}
 	fprintf(stderr, "\n");
 	this->circle = p->pLink[0]->dis + Node(p->pLink[0]->node, p->node).get_len();
 	std::vector<Cut> cuts;
 	do {
-		if (true || angle(first) < 0) {
-			Link *second = first->pLink[1];
-			do {
-				if (angle(first->node - first->pLink[0]->node, second->node - first->node) > angle(first) &&
-				    angle(second->node - second->pLink[0]->node, first->node - second->node) > angle(second)) {
-					if ((first->node - second->node).get_len() == 0 ||
-					    (first->pLink[0]->node - second->node).get_len() == 0) {
-						second = second->pLink[1];
-						continue;
-					}
-					Link *lnk = first;
-					do {
-						if (intersection(first->node, second->node, lnk->node, lnk->pLink[1]->node))break;
-						lnk = lnk->pLink[1];
-					} while (lnk != first);
-
-					if (lnk == first) {
-						double score1 = std::min(second->dis - first->dis, this->circle - second->dis + first->dis) /
-						                Node(first->node, second->node).get_len();
-						if (angle(second) < 0)score1 *= 10;
-						if (angle(first) < 0)score1 *= 10;
-						cuts.push_back({&first->node, &second->node, score1});
-						fprintf(stderr, "get cut:%.2f %.2f-%.2f %.2f:%.2f\n", first->node.x, first->node.y,
-						        second->node.x, second->node.y, score1);
-					}
+		Link *second = first->pLink[1];
+		do {
+			if (angle(first->node - first->pLink[0]->node, second->node - first->node) > angle(first) &&
+			    angle(second->node - second->pLink[0]->node, first->node - second->node) > angle(second) &&
+			    (angle(first) < 0 || angle(second) < 0)) {
+				if ((first->node - second->node).get_len() == 0 ||
+				    (first->pLink[0]->node - second->node).get_len() == 0) {
+					second = second->pLink[1];
+					continue;
 				}
-				second = second->pLink[1];
-			} while (second != p);
-		}
+				Link *lnk = first;
+				do {
+					if (intersection(first->node, second->node, lnk->node, lnk->pLink[1]->node))break;
+					lnk = lnk->pLink[1];
+				} while (lnk != first);
+
+				if (lnk == first) {
+					double score1 = std::min(second->dis - first->dis, this->circle - second->dis + first->dis) /
+					                Node(first->node, second->node).get_len();
+					if (angle(second) < 0)score1 *= 10;
+					if (angle(first) < 0)score1 *= 10;
+					cuts.push_back({&first->node, &second->node, score1});
+					fprintf(stderr, "get cut:%.2f %.2f-%.2f %.2f:%.2f\n", first->node.x, first->node.y,
+					        second->node.x, second->node.y, score1);
+					fprintf(stderr, "score:%.2f %.2f /%.2f\n",
+					        second->dis - first->dis, this->circle - second->dis + first->dis,
+					        Node(first->node, second->node).get_len());
+				}
+			}
+			second = second->pLink[1];
+		} while (second != p);
 		first = first->pLink[1];
 	} while (first->pLink[1] != p);
 	std::sort(cuts.begin(), cuts.end());
@@ -236,31 +238,41 @@ void Polygon::cut_into(std::vector<Polygon *> &output) {
 		if (flag == 0)pass2.push_back(i);
 	}
 	std::vector<Polygon *> temp;
+	std::sort(pass2.begin(), pass2.end(), [](const Cut &l, const Cut &r) -> bool {
+		if (l.a->id == r.a->id) {
+			return l.b->id > r.b->id;
+		}
+		return l.a->id < r.a->id;
+	});
+	std::stack<Node *> stk;
 	for (auto &i: pass2) {
 		Link *pX = i.a->ln;
 		Link *pY = i.b->ln;
+		fprintf(stderr, "cut:%.0f.%.0f %.0f.%.0f,id:%d %d\n", i.a->x, i.a->y, i.b->x, i.b->y, i.a->id, i.b->id);
+		if (!stk.empty() && pY->node == *stk.top())pY = stk.top()->ln;
+		while (!stk.empty() && pY->node.id <= stk.top()->id)stk.pop();
 		Link *newX = new Link(*pX);
 		Link *newY = new Link(*pY);
 		newX->pLink[0]->pLink[1] = newX;
 
-		newX->pLink[1] = newY;
-		newY->pLink[0] = newX;
+		newX->pLink[1] = pY;
+		pY->pLink[0] = newX;
+		pX->pLink[0] = newY;
+		newY->pLink[1] = pX;
 
-		newY->pLink[1]->pLink[0] = newY;
-
-		pY->pLink[1] = pX;
-		pX->pLink[0] = pY;
-
-
-//		newY->pLink[0]->pLink[1] = newY;
-//
-//		newY->pLink[1] = pX;
-//		pX->pLink[0] = newY;
-
+		newY->pLink[0]->pLink[1] = newY;
+		stk.push(&newY->node);
+		if(!temp.empty()&&temp[temp.size()-1]->p==pX){
+			temp[temp.size()-1]->p=newX;
+		}
 		temp.push_back(new Polygon(pX));
+		if(p==i.a->ln){
+			p=newX;
+		}
 	}
-	for (auto &i:temp){
+	for (auto &i: temp) {
 		i->debug();
+		IO::print(*i);
 	}
 	for (auto &i: temp) {
 		i->cut_into(output);
@@ -284,10 +296,10 @@ void Polygon::debug() {
 	Link *now = p;
 	do {
 		assert(now->pLink[0]->pLink[1] == now);
-		fprintf(stderr,"%.0f %.0f-",now->node.x,now->node.y);
+		fprintf(stderr, "%.0f.%.0f ", now->node.x, now->node.y);
 		now = now->pLink[1];
 	} while (p != now);
-	fprintf(stderr,"\n");
+	fprintf(stderr, "\n");
 }
 
 
