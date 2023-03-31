@@ -198,8 +198,7 @@ void Polygon::cut_into(std::vector<Polygon *> &output) {
 			    (angle(first) < 0 || angle(second) < 0)) {
 				if ((first->node - second->node).get_len() == 0 ||
 				    (first->pLink[0]->node - second->node).get_len() == 0) {
-					second = second->pLink[1];
-					continue;
+					goto next;
 				}
 				Link *lnk = first;
 				do {
@@ -212,14 +211,16 @@ void Polygon::cut_into(std::vector<Polygon *> &output) {
 					                Node(first->node, second->node).get_len();
 					if (angle(second) < 0)score1 *= 10;
 					if (angle(first) < 0)score1 *= 10;
+					if(score1<10)goto next;
 					cuts.push_back({&first->node, &second->node, score1});
-					fprintf(stderr, "get cut:%.2f %.2f-%.2f %.2f:%.2f\n", first->node.x, first->node.y,
-					        second->node.x, second->node.y, score1);
-					fprintf(stderr, "score:%.2f %.2f /%.2f\n",
-					        second->dis - first->dis, this->circle - second->dis + first->dis,
-					        Node(first->node, second->node).get_len());
+//					fprintf(stderr, "get cut:%.2f %.2f-%.2f %.2f:%.2f\n", first->node.x, first->node.y,
+//					        second->node.x, second->node.y, score1);
+//					fprintf(stderr, "score:%.2f %.2f /%.2f\n",
+//					        second->dis - first->dis, this->circle - second->dis + first->dis,
+//					        Node(first->node, second->node).get_len());
 				}
 			}
+			next:
 			second = second->pLink[1];
 		} while (second != p);
 		first = first->pLink[1];
@@ -249,8 +250,12 @@ void Polygon::cut_into(std::vector<Polygon *> &output) {
 		Link *pX = i.a->ln;
 		Link *pY = i.b->ln;
 		fprintf(stderr, "cut:%.0f.%.0f %.0f.%.0f,id:%d %d\n", i.a->x, i.a->y, i.b->x, i.b->y, i.a->id, i.b->id);
-		if (!stk.empty() && pY->node == *stk.top())pY = stk.top()->ln;
-		while (!stk.empty() && pY->node.id <= stk.top()->id)stk.pop();
+		while (!stk.empty() && pY->node.id > stk.top()->id)
+			stk.pop();
+		if (!stk.empty() && pY->node == *stk.top()){
+			pY = stk.top()->ln;
+			stk.pop();
+		}
 		Link *newX = new Link(*pX);
 		Link *newY = new Link(*pY);
 		newX->pLink[0]->pLink[1] = newX;

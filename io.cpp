@@ -9,9 +9,9 @@ void print_svg(const Map &mp, const char *file) {
 	fprintf(output, R"(<rect width="%d" height="%d" fill="white"/>
 )", mp.width, mp.height);
 	for (const auto &i: mp.polygons) {
-		if (i->node_count == 0)continue;
+//		if (i->node_count == 0)continue;
 		if (i->p == nullptr)continue;
-		fprintf(output, R"(<polygon stroke="black" stroke-width="0.5" fill="none" points=")");
+		fprintf(output, R"(<polygon stroke="black" stroke-width="0.5" fill="gray" points=")");
 		const Link *now = i->p;
 		do {
 			fprintf(output, "%f %f,", now->node.x, now->node.y);
