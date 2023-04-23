@@ -116,13 +116,13 @@ Polygon::Polygon(FILE *input) {
 	now->pLink[1] = p;
 	init();
 
-#ifdef DEBUG
-	Link *t = p;
-	do {
-		fprintf(stderr, "%f %f\n", t->node.x, t->node.y);
-		t = t->pLink[1];
-	} while (t != p);
-#endif
+//#ifdef DEBUG
+//	Link *t = p;
+//	do {
+//		fprintf(stderr, "%f %f\n", t->node.x, t->node.y);
+//		t = t->pLink[1];
+//	} while (t != p);
+//#endif
 }
 
 Polygon::~Polygon() {
@@ -173,19 +173,25 @@ void Polygon::load_nodes(std::vector<Node *> &nodes) const {
 }
 
 void Polygon::cut_into(std::vector<Polygon *> &output) {
-	this->debug();
+//	this->debug();
 //	fprintf(stderr, "cut:%p\n", this);
 	Link *first = p;
 	int cnt = 0;
 	first->dis = 0;
 	first->node.id = 0;
 	first = first->pLink[1];
+	int ang=0;
 	while (first != p) {
 		first->dis = first->pLink[0]->dis + Node(first->pLink[0]->node, first->node).get_len();
 		assert(first->pLink[0]->pLink[1] == first);
 		first->node.id = ++cnt;
+		if(angle(first)<0)ang++;
 //		fprintf(stderr, "at %.2f %.2f,dis=%.2f\n", first->node.x, first->node.y, first->dis);
 		first = first->pLink[1];
+	}
+	if(ang==0){
+		output.push_back(this);
+		return;
 	}
 	fprintf(stderr, "\n");
 	this->circle = p->pLink[0]->dis + Node(p->pLink[0]->node, p->node).get_len();
@@ -237,6 +243,7 @@ void Polygon::cut_into(std::vector<Polygon *> &output) {
 			}
 		}
 		if (flag == 0)pass2.push_back(i);
+		if(pass2.size()>ang)break;
 	}
 	std::vector<Polygon *> temp;
 	std::sort(pass2.begin(), pass2.end(), [](const Cut &l, const Cut &r) -> bool {
@@ -249,10 +256,10 @@ void Polygon::cut_into(std::vector<Polygon *> &output) {
 	for (auto &i: pass2) {
 		Link *pX = i.a->ln;
 		Link *pY = i.b->ln;
-		fprintf(stderr, "cut:%.0f.%.0f %.0f.%.0f,id:%d %d\n", i.a->x, i.a->y, i.b->x, i.b->y, i.a->id, i.b->id);
+//		fprintf(stderr, "cut:%.0f.%.0f %.0f.%.0f,id:%d %d\n", i.a->x, i.a->y, i.b->x, i.b->y, i.a->id, i.b->id);
 		while (!stk.empty() && pY->node.id > stk.top()->id)
 			stk.pop();
-		if (!stk.empty() && pY->node == *stk.top()){
+		if (!stk.empty() && pY->node.id == stk.top()->id){
 			pY = stk.top()->ln;
 			stk.pop();
 		}
@@ -282,7 +289,7 @@ void Polygon::cut_into(std::vector<Polygon *> &output) {
 	for (auto &i: temp) {
 		i->cut_into(output);
 	}
-
+	this->cut_into(output);
 	first = p;
 //	do{
 //		if(angle(first)<0){
@@ -294,7 +301,7 @@ void Polygon::cut_into(std::vector<Polygon *> &output) {
 
 Polygon::Polygon(Link *start) {
 	p = start;
-	debug();
+//	debug();
 }
 
 void Polygon::debug() {
