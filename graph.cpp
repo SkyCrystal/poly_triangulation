@@ -244,7 +244,7 @@ void Polygon::cut_into(std::vector<Polygon *> &output) {
 			}
 		}
 		if (flag == 0)pass2.push_back(i);
-		if(pass2.size()>ang)break;
+		if(pass2.size()>0.1*ang)break;
 	}
 	std::vector<Polygon *> temp;
 	std::sort(pass2.begin(), pass2.end(), [](const Cut &l, const Cut &r) -> bool {
@@ -253,7 +253,7 @@ void Polygon::cut_into(std::vector<Polygon *> &output) {
 		}
 		return l.a->id < r.a->id;
 	});
-	std::stack<Node *> stk;
+//	std::stack<Node *> stk;
 //	Link *last= nullptr;
 	for (auto &i: pass2) {
 		Link *pX = i.a->ln;
