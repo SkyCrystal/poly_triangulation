@@ -179,8 +179,8 @@ void Polygon::cut_into(std::vector<Polygon *> &output) {
 	int cnt = 0;
 	first->dis = 0;
 	first->node.id = 0;
+	int ang=angle(first)<0;
 	first = first->pLink[1];
-	int ang=0;
 	while (first != p) {
 		first->dis = first->pLink[0]->dis + Node(first->pLink[0]->node, first->node).get_len();
 		assert(first->pLink[0]->pLink[1] == first);
@@ -219,6 +219,7 @@ void Polygon::cut_into(std::vector<Polygon *> &output) {
 					if (angle(first) < 0)score1 *= 10;
 					if(score1<10)goto next;
 					cuts.push_back({&first->node, &second->node, score1});
+					assert(first->node.id<second->node.id);
 //					fprintf(stderr, "get cut:%.2f %.2f-%.2f %.2f:%.2f\n", first->node.x, first->node.y,
 //					        second->node.x, second->node.y, score1);
 //					fprintf(stderr, "score:%.2f %.2f /%.2f\n",
@@ -253,34 +254,41 @@ void Polygon::cut_into(std::vector<Polygon *> &output) {
 		return l.a->id < r.a->id;
 	});
 	std::stack<Node *> stk;
+//	Link *last= nullptr;
 	for (auto &i: pass2) {
 		Link *pX = i.a->ln;
+//		if(pX==last)continue;
+//		last=pX;
 		Link *pY = i.b->ln;
+		if(pX->dis==-1||pY->dis==-1)continue;
+		pX->dis=-1;
+		pY->dis=-1;
+
 //		fprintf(stderr, "cut:%.0f.%.0f %.0f.%.0f,id:%d %d\n", i.a->x, i.a->y, i.b->x, i.b->y, i.a->id, i.b->id);
-		while (!stk.empty() && pY->node.id > stk.top()->id)
-			stk.pop();
-		if (!stk.empty() && pY->node.id == stk.top()->id){
-			pY = stk.top()->ln;
-			stk.pop();
-		}
+//		while (!stk.empty() && pY->node.id > stk.top()->id)
+//			stk.pop();
+//		if (!stk.empty() && pY->node.id == stk.top()->id){
+//			pY = stk.top()->ln;
+//			stk.pop();
+//		}
 		Link *newX = new Link(*pX);
 		Link *newY = new Link(*pY);
-		newX->pLink[0]->pLink[1] = newX;
+		newX->pLink[1]->pLink[0] = newX;
 
-		newX->pLink[1] = pY;
-		pY->pLink[0] = newX;
-		pX->pLink[0] = newY;
-		newY->pLink[1] = pX;
+		newX->pLink[0] = newY;
+		pY->pLink[0] = pX;
+		pX->pLink[1] = pY;
+		newY->pLink[1] = newX;
 
 		newY->pLink[0]->pLink[1] = newY;
-		stk.push(&newY->node);
-		if(!temp.empty()&&temp[temp.size()-1]->p==pX){
-			temp[temp.size()-1]->p=newX;
-		}
-		temp.push_back(new Polygon(pX));
-		if(p==i.a->ln){
-			p=newX;
-		}
+//		stk.push(&newX->node);
+//		if(!temp.empty()&&temp[temp.size()-1]->p==pX){
+//			temp[temp.size()-1]->p=newX;
+//		}
+		temp.push_back(new Polygon(newX));
+//		if(p==i.a->ln){
+//			p=newX;
+//		}
 	}
 	for (auto &i: temp) {
 		i->debug();
@@ -296,7 +304,7 @@ void Polygon::cut_into(std::vector<Polygon *> &output) {
 //
 //		}
 //	}while(first!=p)
-	output.push_back(this);
+//	output.push_back(this);
 }
 
 Polygon::Polygon(Link *start) {
